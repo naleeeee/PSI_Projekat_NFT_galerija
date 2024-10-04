@@ -1,0 +1,142 @@
+{% extends 'base_nav_bar.html' %}
+
+{% block maincontent %}
+
+    <div class="container mt-5">
+
+        <div class="profile-info">
+            <div class="row">
+                <div class="col-md-6 text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <label for="nazivIzlozbe" class="me-2"><strong>Naziv:</strong>
+                            <span style="font-weight: 300;" id="nazivIzlozbe">{{ exhibition.name }}</span></label>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <label for="opisIzlozbe" class="me-2"><strong>Opis:</strong>
+                        <span id="opisIzlozbe" style="font-weight: 300;">{{ exhibition.description }}</span>
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <label for="vrednostIzlozbe" class="me-2"><strong>Vrednost izlozbe:</strong>
+                        <span id="vrednostIzlozbe" style="font-weight: 300;">{{ exhibition.value|floatformat:2 }} ETH</span>
+
+                        </label>
+                    </div>
+
+                   <div class="d-flex align-items-center justify-content-center mb-3">
+                        <label for="prosecnaOcenaNFT" class="me-2"><strong>Prosecna ocena:</strong>
+                            {% if exhibition.avg_grade != 0 %}
+                                <span id="prosecnaOcenaNFT" style="font-weight: 300;">{{ exhibition.avg_grade|floatformat:2 }}</span>
+                            {% else %}
+                                <span id="prosecnaOcenaNFT" style="font-weight: 300;">Nije ocenjena</span>
+                            {% endif %}
+                        </label>
+                    </div>
+                
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <label for="vlasnikIzlozbe" class="me-2"><strong>username:</strong>
+                        <a href="#" onclick="submitForm('{{ owner.username }}', '{% url 'profile_info' %}')"
+                           id="vlasnikIzlozbe"   style="font-weight: 300" class="info-value">@{{ owner.username }}
+                        </a>
+                            
+                            </label>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <label for="datumKreiranjaIzlozbe" class="me-2"><strong>Datum kreiranja:</strong>
+                        <span id="datumKreiranjaIzlozbe" style="font-weight: 300">{{ exhibition.date }}</span>
+                            </label>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 text-left">
+                        <button class="btn btn-outline-linear btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Sortiraj
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" href="#" onclick="refresh('poImenu',{{ exhibition.id }},'{% url 'sort_exhibition' %}')">Po imenu</a>
+                            <a class="dropdown-item" href="#" onclick="refresh('poOceni',{{ exhibition.id }},'{% url 'sort_exhibition'  %}')">Po oceni</a>
+                            <a class="dropdown-item" href="#" onclick="refresh('poVrednosti',{{ exhibition.id }},'{% url 'sort_exhibition'  %}')">Po vrednosti</a>
+                        </div>
+
+                        {% if request.user.is_authenticated %}
+                            {% if request.user.idkor == owner.idkor %}
+                                <button class="btn btn-outline-linear btn-outline-light m-0 btn-lg" type="button" onclick="izmeniIzlozbu()">
+                                      Izmeni izložbu
+                                </button>
+                                <form id="deleteForm" action="{% url 'remove_exhibition' %}" method="post" style="margin-top: 20px">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="exhibition_id" id="exhibition_id">
+                                    <button class="btn btn-outline-linear btn-outline-light m-0 btn-lg" type="button" onclick="obrisiIzlozbu()" >
+                                      Obriši izložbu
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form id="profileForm" method="post" action="" style="display: none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="username" id="usernameInput">
+                </form>
+
+		<form id="sortiraj" method="post" action="" style="display: none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="sort" id="sort">
+                    <input type="hidden" name="id" id="id">
+                </form>
+
+                <script>
+                    function izmeniIzlozbu() {
+                        // Preusmeravanje na URL za izmenu izložbe
+                        window.location.href = "{% url 'change_exhibition' exhibition.id %}";
+                    }
+
+                    function obrisiIzlozbu() {
+
+                        // Preusmeravanje na URL za brisanje izložbe
+                        if (confirm("Da li ste sigurni da želite da izbrišete izložbu?")) {
+                            // Ako je korisnik potvrdio brisanje, preusmeravamo ga na odgovarajuću stranicu
+                            alert("Uspešno ste izbrisali izložbu");
+
+                            document.getElementById("exhibition_id").value={{ exhibition.id }};
+                            document.getElementById("deleteForm").submit();
+                        }
+
+                    }
+                    function submitForm(username, action) {
+                        document.getElementById("usernameInput").value = username;
+                        document.getElementById("profileForm").action = action;
+                        document.getElementById("profileForm").submit();
+                    }
+
+		    function refresh(sortType,id,action) {
+                	console.log("aaaaa");
+                	document.getElementById("sort").value = sortType;
+                	document.getElementById("id").value = id;
+                	document.getElementById("sortiraj").action = action;
+                	document.getElementById("sortiraj").submit();
+            	   }
+                </script>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for nft in nfts %}
+                <div class="col-md-3 mb-4">
+                    <div class="album-item">
+                        <a href="{% url 'nft_review' nft.nft.idnft %}">
+                            <img
+
+                                    src="{{ nft.nft.slika.url }}"
+                            alt="Slika" id="{{ nft.nft.idnft }}" style="width: 300px;height: 300px">
+                        </a>
+                        <div class="caption text-center">{{ nft.nft.naziv }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}
